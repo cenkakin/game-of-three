@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Game of Three</title>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+<div>
+  <input type="submit" value="Register game" id="registerGame">
+  </br></br>
+  <label for="gameId">Game ID: </label>
+  <input type="text" name="gameId" id="gameId" readonly>
+  </br></br>
+  <label for="playerId">Your ID: </label>
+  <input type="text" name="playerId" id="playerId" readonly>
+  </br></br>
+  <input type="submit" value="Make move" id="makeMove" disabled>
+  </br></br>
+  <label for="moves">Moves</label>
+  <ul id="moves"></ul>
+</div>
+<script type="application/javascript">
+
+      if (!window.EventSource) {
+        alert('Server-Sent Events are not supported in this browser!');
+      }
+
+      var elements = document.getElementById("moves");
+      var makeMoveButton = $("#makeMove");
+
+      function moveMessageBuilder(id, playerId, added, result) {
+        if (playerId === id) {
+          return 'Your move: added: ' + added + ', Result: ' + result;
+        }
+        return 'Player with ID ' + id + ' added: ' + added + ', Result: ' + result;
+      }
+
+      $("#registerGame").click(function () {
+        $("#registerGame").prop("disabled", true);
+        $.post('/game').done(function (data) {
+          var playerId = data.playerId;
+          var gameId = data.gameId;
+          var move = data.firstMove;
+          if (!!move) {
+            add(moveMessageBuilder(move.player.id, playerId, move.added, move.result));
+            makeMoveButton.prop("disabled", false);
+          }
+          $("#gameId").val(gameId);
+          $("#playerId").val(playerId);
+          var eventSource = new EventSource('/game/' + gameId);
+          eventSource.onmessage = function (event) {
+            var move = $.parseJSON(event.data);
+            add(moveMessageBuilder(move.playerId, playerId, move.added, move.result))
+            makeMoveButton.prop("disabled", true);
+            if (move.finished) {
+              if (move.playerId === playerId) {
+                add('Game over! Congratulations, You WON!');
+              } else {
+                add('Game over! Sorry, You lost!');
+              }
+              eventSource.close();
+            } else if (move.nextPlayerId === playerId) {
+              makeMoveButton.prop("disabled", false);
+            }
+          };
+        });
+      });
+
+      function add(message) {
+        var element = document.createElement("li");
+        element.innerHTML = message;
+        if (!elements.hasChildNodes()) {
+          var gameStartedMessage = document.createElement("li");
+          gameStartedMessage.innerHTML = "GAME IS ON!";
+          elements.appendChild(gameStartedMessage);
+        }
+        elements.appendChild(element);
+      }
+
+      makeMoveButton.click(function (event) {
+        var playerId = $("#playerId").val();
+        var gameId = $("#gameId").val();
+        $.post('/game/' + gameId + '/player/' + playerId + '/move');
+      });
+</script>
+</body>
+</html>
