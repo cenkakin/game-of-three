@@ -1,5 +1,6 @@
 package gameofthree.core.service;
 
+import gameofthree.core.event.GameUpdatedEvent;
 import gameofthree.core.exception.GameNotFoundException;
 import gameofthree.core.exception.GameOverException;
 import gameofthree.core.exception.WrongPlayerException;
@@ -12,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import reactor.core.publisher.EmitterProcessor;
+import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * @author cenk
@@ -23,14 +24,14 @@ public class GameOperatorServiceImpl implements GameOperatorService {
 
   private final PlayerService playerService;
 
-  private final EmitterProcessor<Game> updatedGameEmitter;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   private AtomicLong gameIdSequence;
 
   public GameOperatorServiceImpl(PlayerService playerService,
-                                 EmitterProcessor<Game> updatedGameEmitter) {
+                                 ApplicationEventPublisher applicationEventPublisher) {
     this.playerService = playerService;
-    this.updatedGameEmitter = updatedGameEmitter;
+    this.applicationEventPublisher = applicationEventPublisher;
     this.gameIdSequence = new AtomicLong();
   }
 
@@ -52,7 +53,7 @@ public class GameOperatorServiceImpl implements GameOperatorService {
     checkPlayerTurn(nextPlayer.getId(), playerId);
     Move move = nextPlayer.makeMove(game.getLatestMove().getResult());
     game.setLatestMove(move);
-    emitUpdatedGameEvent(game);
+    publishUpdatedGameEvent(game);
     return move;
   }
 
@@ -82,12 +83,12 @@ public class GameOperatorServiceImpl implements GameOperatorService {
       Player firstPlayer = game.getFirstPlayer();
       Move move = firstPlayer.makeFirstMove();
       game.setLatestMove(move);
-      emitUpdatedGameEvent(game);
+      publishUpdatedGameEvent(game);
     };
   }
 
-  private void emitUpdatedGameEvent(Game game) {
-    updatedGameEmitter.onNext(game);
+  private void publishUpdatedGameEvent(Game game) {
+    applicationEventPublisher.publishEvent(new GameUpdatedEvent(game));
   }
 
   private Game newGame(Player player) {

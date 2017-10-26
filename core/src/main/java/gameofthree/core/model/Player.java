@@ -10,6 +10,8 @@ public class Player {
 
   private static final Integer FIRST_MOVE_UPPER_LIMIT = 100;
 
+  private static final Integer START_NUMBER = 2;
+
   private static final List<Integer> POSSIBLE_ADDING_MOVES = Arrays.asList(-1, 0, 1);
 
   private final Long id;
@@ -23,7 +25,7 @@ public class Player {
   }
 
   public Move makeFirstMove() {
-    Integer firstMoveResult = (int) (Math.random() * FIRST_MOVE_UPPER_LIMIT) + 1;
+    Integer firstMoveResult = (int) (Math.random() * FIRST_MOVE_UPPER_LIMIT) + START_NUMBER;
     return new Move(firstMoveResult, 0, this);
   }
 

@@ -1,8 +1,8 @@
 **GAME OF TREE**
 
 To run: 
-1) Clone the repo to your local 
-2) Execute _./mvnw -f app/ spring-boot:run_
+1) Clone repo to your local 
+2) Execute _./mvnw -Prun_
 
 To play the game:
 

@@ -2,7 +2,7 @@ package gameofthree.app.controller;
 
 import gameofthree.app.dto.RegisterGameDto;
 import gameofthree.app.dto.UpdatedGameDto;
-import gameofthree.app.factory.UpdatedGameDtoFactory;
+import gameofthree.app.manager.ReactiveManager;
 import gameofthree.core.exception.AbstractGameException;
 import gameofthree.core.exception.GameNotFoundException;
 import gameofthree.core.exception.GameOverException;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 
 /**
@@ -29,11 +28,11 @@ public class GameController {
 
   private final GameOperatorService gameOperatorService;
 
-  private final EmitterProcessor<Game> emitter;
+  private final ReactiveManager reactiveManager;
 
-  public GameController(GameOperatorService gameOperatorService, EmitterProcessor<Game> emitter) {
+  public GameController(GameOperatorService gameOperatorService, ReactiveManager reactiveManager) {
     this.gameOperatorService = gameOperatorService;
-    this.emitter = emitter;
+    this.reactiveManager = reactiveManager;
   }
 
   @PostMapping("/game")
@@ -45,9 +44,7 @@ public class GameController {
 
   @GetMapping(value = "/game/{gameId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public Flux<UpdatedGameDto> getUpdateGameInfo(@PathVariable Long gameId) {
-    return emitter.log()
-                  .filter(e -> gameId.equals(e.getId()))
-                  .map(UpdatedGameDtoFactory::create);
+    return reactiveManager.logGameUpdates(gameId);
   }
 
   @PostMapping(path = "/game/{gameId}/player/{playerId}/move")

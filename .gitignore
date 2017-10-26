@@ -37,6 +37,7 @@ build/
 *.ear
 *.ser
 logs/
+!maven-wrapper.jar
 
 # Compression generated files
 *.zip
